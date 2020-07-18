@@ -1,0 +1,107 @@
+[
+        {
+            
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/1"
+                }
+            },
+            "id": "1",
+            "document": "Ensino Superior, Cursos de Graduação e Demais Cursos",
+            "description": "Mensalidade referente ao mês de junho, valor de R$1.500,00",
+            "amount": 1500.00,
+            "referenceMonth": "2020-07-01T00:00:00.000Z",
+            "referenceYear": 2020,
+            "createdAt": "2020-07-12T00:00:00.000Z",
+            "isActive": true,
+            "deactiveAt": null
+        },
+        {
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/2"
+                }
+            },
+            "id": "2",
+            "document": "La Guarda Cabernet Sauvignon",
+            "description": "Vinho La Guarda cabernet valor de R$39,90",
+            "amount": 39.90,
+            "referenceMonth": "2020-07-01T00:00:00.000Z",
+            "referenceYear": 2020,
+            "createdAt": "2020-07-18T00:00:00.000Z",
+            "isActive": true,
+            "deactiveAt": null
+        },
+        {
+            
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/3"
+                }
+            },
+            "id": "3",
+            "document": "Cafeteira UniTermi",
+            "description": "Garrafa Térmica da maraca uniterm no valor de 19,90",
+            "amount": 19.90,
+            "referenceMonth": "2020-07-01T00:00:00.000Z",
+            "referenceYear": 2020,
+            "createdAt": "2020-07-17T00:00:00.000Z",
+            "isActive": true,
+            "deactiveAt": null
+        },
+        {
+            
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/4"
+                }
+            },
+            "id": "4",
+            "document": "Kit Gin",
+            "description": "Kit contendo uma garrafa de gin e duas taças de acrílico no valor de 150,00",
+            "amount": 150,
+            "referenceMonth": "2020-07-01T00:00:00.000Z",
+            "referenceYear": 2020,
+            "createdAt": "2020-07-16T00:00:00.000Z",
+            "isActive": false,
+            "deactiveAt": "2020-07-18T00:00:00.000Z"
+        },
+        {
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/5"
+                }
+            },
+            "id": "5",
+            "document": "Rede Básica",
+            "description": "Rede de descanso costura básica no valor de 120 reais",
+            "amount": 120,
+            "referenceMonth": "2018-03-01T00:00:00.000Z",
+            "referenceYear": 2018,
+            "createdAt": "2018-02-29T00:00:00.000Z",
+            "isActive": true,
+            "deactiveAt": null
+        },
+        {
+            "_links": {
+                "self": {
+                    "href": "http://localhost:5000/invoices/6"
+                }
+            },
+            "id": "6",
+            "document": "Notebook Dell XPS",
+            "description": "Notebook da marca Dell, valor de R$8.800,00",
+            "amount": 8800,
+            "referenceMonth": "2020-10-01T00:00:00.000Z",
+            "referenceYear": 2020,
+            "createdAt": "2020-10-12T00:00:00.000Z",
+            "isActive": true,
+            "deactiveAt": null
+        }
+    ]
+
+
+
+
+
+
