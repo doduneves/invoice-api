@@ -16,10 +16,41 @@ def list_invoices():
     # Obtendo o valor da query para ordenacao
     order_query = request.args.get('order')
 
-    ordered_invoices = order_invoices(mock_invoices, order_query)
+    # Obtendo valores de filtro
+    document_filter = request.args.get('document')
+    year_filter = request.args.get('year')
+    month_filter = request.args.get('month')
+    
+    filtered_invoices = mock_invoices.copy()
+    
+    if(document_filter or year_filter or month_filter):
+        i = 0
+        while i < len(filtered_invoices):
+
+            item_removed = False
+
+            # Filtro por documento
+            if document_filter and document_filter.lower() not in filtered_invoices[i]['document'].lower():
+                item_removed = True
+
+            # # Filtro por Ano
+            if year_filter and year_filter not in filtered_invoices[i]['referenceYear']:
+                item_removed = True
+
+            # # Filtro por Mes - "-09-" p.ex.
+            if month_filter and ("-"+month_filter.zfill(2)+"-") not in filtered_invoices[i]['referenceMonth']:
+                item_removed = True
+
+            if item_removed:
+                filtered_invoices.remove(filtered_invoices[i])                
+            else:
+                i += 1
+
+
+    ordered_invoices = order_invoices(filtered_invoices, order_query)
 
     limit = 5 # Itens por pagina
-    count_invoices = len(mock_invoices)
+    count_invoices = len(filtered_invoices)
 
     links_json = generate_links_json(page, limit, ordered_invoices)    
 
@@ -34,9 +65,9 @@ def order_invoices(invoices_list, order_query):
     invoices_list.sort(key = lambda x: x.get('id'))
 
     if (order_query):        
-        order_by_mouth = True if 'mouth' in order_query else False
-        order_by_year = True if 'year' in order_query else False
-        order_by_document = True if 'docs' in order_query else False    
+        order_by_mouth = True if 'referenceMonth' in order_query else False
+        order_by_year = True if 'referenceYear' in order_query else False
+        order_by_document = True if 'document' in order_query else False    
         
         invoices_list.sort(key = lambda x: (x.get('referenceMonth') if order_by_mouth else '',
             x.get('referenceYear') if order_by_year else '',
@@ -88,7 +119,6 @@ def separate_result_per_page(mock_invoices, limit, page):
     last_element = count_invoices if (last_element > count_invoices) else last_element
 
     for i in range(first_element, last_element):
-        print(i)
         invoices.append(mock_invoices[i])
     
     return invoices
