@@ -9,17 +9,49 @@ app = Flask(__name__)
 @app.route('/invoices/', methods=['GET'])
 def list_invoices():
 
-    invoices = []
-    
-    limit = 5 # Itens por pagina
-    count_invoices = len(mock_invoices)
-
     # Tratando o valor das paginas
     page = int(request.args.get('page')) if request.args.get('page') else 1
     page = page if page > 1 else 1
 
+    # Obtendo o valor da query para ordenacao
+    order_query = request.args.get('order')
+
+    ordered_invoices = order_invoices(mock_invoices, order_query)
+
+    limit = 5 # Itens por pagina
+    count_invoices = len(mock_invoices)
+
+    links_json = generate_links_json(page, limit, ordered_invoices)    
+
+    invoices = separate_result_per_page(ordered_invoices, limit, page)
+
+    result = create_list_result(links_json, limit, count_invoices, invoices)
+
+    return jsonify(result), 200
+
+def order_invoices(invoices_list, order_query):
+
+    invoices_list.sort(key = lambda x: x.get('id'))
+
+    if (order_query):        
+        order_by_mouth = True if 'mouth' in order_query else False
+        order_by_year = True if 'year' in order_query else False
+        order_by_document = True if 'docs' in order_query else False    
+        
+        invoices_list.sort(key = lambda x: (x.get('referenceMonth') if order_by_mouth else '',
+            x.get('referenceYear') if order_by_year else '',
+            x.get('document') if order_by_document else ''))
+
+
+    return invoices_list
+
+
+def generate_links_json(page, limit, mock_invoices):
+    
+    count_invoices = len(mock_invoices)
+
     previous_page = page - 1 if page > 1 else None 
-    next_page = page + 1 if int(count_invoices/limit)+1 > page else None
+    next_page = page + 1 if int(count_invoices/limit)+1 > page else None    
 
     links_json = {
         "self": {
@@ -42,6 +74,13 @@ def list_invoices():
         links_json["next"] = {
             "href": "http://localhost:5000/invoices?page=" + str(next_page)
         }
+
+    return links_json
+
+def separate_result_per_page(mock_invoices, limit, page):  
+
+    invoices = []
+    count_invoices = len(mock_invoices)
     
     # Lista de elementos na resposta
     first_element = (page-1) * limit
@@ -51,15 +90,16 @@ def list_invoices():
     for i in range(first_element, last_element):
         print(i)
         invoices.append(mock_invoices[i])
+    
+    return invoices
 
-    result = {
-        "_links": links_json,
+def create_list_result(links, limit, count_invoices, invoices):
+    return {
+        "_links": links,
         "per_page": limit,
         "total": count_invoices,
         "invoices": invoices
     }
-
-    return jsonify(result), 200
 
 @app.route('/invoices/<string:invoice_id>', methods=['GET'])
 def get_invoices_by_id(invoice_id):
@@ -97,8 +137,7 @@ def deactivate_invoice(invoice_id):
 
 mock_invoices = ''
 with open('mock_data.json') as json_file:
-    mock_invoices = json.load(json_file)
-    
+    mock_invoices = json.load(json_file)    
 
 if __name__ == '__main__':
     app.run(debug = True)
