@@ -17,6 +17,9 @@ E instale todas as dependências do projeto no ambiente:
 
 `$ pip install -r requirements.txt`
 
+E finalmente, para executá-lo (por padrão, roda na porta 5000 do localhost)
+
+`$ python app.py`
 
 ### Utilização
 A API dispôe dos verbos e seus endpoints: 
@@ -64,9 +67,6 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 
 ### Últimas Atualizações
 *18/jul - Mockando dados e fazendo paginacao*
-
 *18/jul - LIST: Ordenar por mês, ano, documentos ou a combinação entre eles*
-
 *19/jul - LIST: ajuste ordenação e filtros por documents, mouth e ano*
-
 *20/jul - POST, PUT e DELETE*
