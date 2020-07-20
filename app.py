@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from datetime import datetime
 
+from model.invoice import Invoice
+
 import json
 
 app = Flask(__name__)
@@ -46,7 +48,6 @@ def list_invoices():
             else:
                 i += 1
 
-
     ordered_invoices = order_invoices(filtered_invoices, order_query)
 
     limit = 5 # Itens por pagina
@@ -62,7 +63,7 @@ def list_invoices():
 
 def order_invoices(invoices_list, order_query):
 
-    invoices_list.sort(key = lambda x: x.get('id'))
+    invoices_list.sort(key = lambda x: x.get('createdAt'))
 
     if (order_query):        
         order_by_mouth = True if 'referenceMonth' in order_query else False
@@ -138,28 +139,43 @@ def get_invoices_by_id(invoice_id):
 
 @app.route('/invoices', methods=['POST'])
 def create_invoice():
-    new_invoice = request.get_json()
 
-    return jsonify(new_invoice), 201
+    if request.get_json():
+            invoice = Invoice(request.get_json())
 
-@app.route('/invoices/<int:invoice_id>', methods=['PUT'])
+            mock_invoices.append(invoice.__dict__)
+
+            return jsonify(invoice.__dict__), 201
+    else:
+        return jsonify({'error': 'No requested body found'}), 400
+
+
+@app.route('/invoices/<string:invoice_id>', methods=['PUT'])
 def update_invoice(invoice_id):
     for invoice in mock_invoices:
         if invoice['id'] == invoice_id:
-            invoice = request.get_json()
 
-            return jsonify(invoice), 200
+            for k in invoice.keys():
+                if k in request.get_json():
+                    invoice[k] = request.get_json()[k]
+
+            new_invoice = Invoice(invoice,invoice_id)
+
+            mock_invoices.remove(invoice)
+            mock_invoices.append(new_invoice.__dict__)
+
+            return jsonify(new_invoice.__dict__), 200
 
     return jsonify({'error': 'Invoice to update was not found'}), 404
 
 
-
-@app.route('/invoices/<int:invoice_id>', methods=['DELETE'])
+@app.route('/invoices/<string:invoice_id>', methods=['DELETE'])
 def deactivate_invoice(invoice_id):
     for invoice in mock_invoices:
-        if invoice['id'] == invoice_id:
-            actual_date = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+        if invoice['id'] == invoice_id and invoice['isActive']:
+            actual_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
             invoice["deactiveAt"] = actual_date
+            invoice["isActive"] = False
 
             return jsonify(invoice), 200
 
