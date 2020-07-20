@@ -66,7 +66,11 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 - DELETE: http://127.0.0.1:5000/invoices/[id]
 
 ### Últimas Atualizações
-*18/jul - Mockando dados e fazendo paginacao*
-*18/jul - LIST: Ordenar por mês, ano, documentos ou a combinação entre eles*
-*19/jul - LIST: ajuste ordenação e filtros por documents, mouth e ano*
-*20/jul - POST, PUT e DELETE*
+
+- *18/jul - Mockando dados e fazendo paginacao*
+
+- *18/jul - LIST: Ordenar por mês, ano, documentos ou a combinação entre eles*
+
+- *19/jul - LIST: ajuste ordenação e filtros por documents, mouth e ano*
+
+- *20/jul - POST, PUT e DELETE*
