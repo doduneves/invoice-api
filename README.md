@@ -49,13 +49,13 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 - POST: http://127.0.0.1:5000/invoices
 
 **Formato do body:**
-{
+`{
   "amount": [number],
   "description": [string],
   "document": [string],
   "referenceMonth": [date],
   "referenceYear": [number]
-}
+}`
 
 **Atualiza um Invoice com o id declarado na querystring e os atributos a serem atualizados no body da requisição no mesmo formato do POST.**
 
