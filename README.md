@@ -41,9 +41,9 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 - http://127.0.0.1:5000/invoices?page=2
 
 
-**Obtem o invoice pelo determinado [id]**
+**Obtem o invoice pelo determinado {id}**
 
-- GET: http://127.0.0.1:5000/invoices/[id]
+- GET: http://127.0.0.1:5000/invoices/{id}
 
 **Insere um novo Invoice sendo declarado no body da requisição. **
 
@@ -61,11 +61,13 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 
 **Atualiza um Invoice com o id declarado na querystring e os atributos a serem atualizados no body da requisição no mesmo formato do POST.**
 
-- PUT: http://127.0.0.1:5000/invoices/[id]
+- PUT: http://127.0.0.1:5000/invoices/{id}
+
 
 ** Desativa um invoice já inserido **
 
-- DELETE: http://127.0.0.1:5000/invoices/[id]
+
+- DELETE: http://127.0.0.1:5000/invoices/{id}
 
 
 #### Token de acesso
