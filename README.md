@@ -22,6 +22,7 @@ E finalmente, para executá-lo (por padrão, roda na porta 5000 do localhost)
 `$ python app.py`
 
 ### Utilização
+
 A API dispôe dos verbos e seus endpoints: 
 
 **Lista todas os *invoices* disponíves**
@@ -49,6 +50,7 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 - POST: http://127.0.0.1:5000/invoices
 
 **Formato do body:**
+
 `{
   "amount": [number],
   "description": [string],
@@ -65,6 +67,15 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 
 - DELETE: http://127.0.0.1:5000/invoices/[id]
 
+
+#### Token de acesso
+Para acessar todos os endpoints, é necessário utilizar o token de autorização.
+No header da requisição: {"Auth-Key": "822e75ef88572e1278a74621385280ec"}
+
+**Exemplo:**
+`curl --location --request GET 'http://127.0.0.1:5000/invoices' \
+--header 'Auth-Key: 822e75ef88572e1278a74621385280ec' \`
+
 ### Últimas Atualizações
 
 - *18/jul - Mockando dados e fazendo paginacao*
@@ -74,3 +85,6 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 - *19/jul - LIST: ajuste ordenação e filtros por documents, mouth e ano*
 
 - *20/jul - POST, PUT e DELETE*
+
+- *20/jul - Incluindo token estático para autorização de requisições à API*
+

@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from functools import wraps
 from datetime import datetime
 
 from model.invoice import Invoice
@@ -7,8 +8,20 @@ import json
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY']='822e75ef88572e1278a74621385280ec'
+
+def require_api_token(func):
+    @wraps(func)
+    def check_token(*args, **kwargs):
+        if request.headers.get('Auth-Key') and request.headers.get('Auth-Key') == app.config['SECRET_KEY']:
+            return func(*args, **kwargs)
+        else:
+            return jsonify({"message": "Access Denied"}), 403
+        
+    return check_token
 
 @app.route('/invoices/', methods=['GET'])
+@require_api_token
 def list_invoices():
 
     # Tratando o valor das paginas
@@ -133,11 +146,13 @@ def create_list_result(links, limit, count_invoices, invoices):
     }
 
 @app.route('/invoices/<string:invoice_id>', methods=['GET'])
+@require_api_token
 def get_invoices_by_id(invoice_id):
     invoice = [inv for inv in mock_invoices if inv["id"] == invoice_id]
     return jsonify(invoice), 200
 
 @app.route('/invoices', methods=['POST'])
+@require_api_token
 def create_invoice():
 
     if request.get_json():
@@ -151,6 +166,7 @@ def create_invoice():
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['PUT'])
+@require_api_token
 def update_invoice(invoice_id):
     for invoice in mock_invoices:
         if invoice['id'] == invoice_id:
@@ -170,6 +186,7 @@ def update_invoice(invoice_id):
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['DELETE'])
+@require_api_token
 def deactivate_invoice(invoice_id):
     for invoice in mock_invoices:
         if invoice['id'] == invoice_id and invoice['isActive']:
