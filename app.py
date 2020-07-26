@@ -2,6 +2,11 @@ from flask import Flask, jsonify, request
 from functools import wraps
 from datetime import datetime
 
+import psycopg2
+
+from config.db_generate import create_table
+from config.config import config
+
 from model.invoice import Invoice
 
 import json
@@ -21,79 +26,145 @@ def require_api_token(func):
     return check_token
 
 @app.route('/invoices/', methods=['GET'])
-@require_api_token
+# @require_api_token
 def list_invoices():
 
-    # Tratando o valor das paginas
-    page = int(request.args.get('page')) if request.args.get('page') else 1
-    page = page if page > 1 else 1
+    conn = None
 
-    # Obtendo o valor da query para ordenacao
-    order_query = request.args.get('order')
+    try:
+        
+        # Obtendo o valor da query para ordenacao
+        order_query = request.args.get('order')
+        
+        order_string = order_invoices(order_query)
+
+        
+    except:
+        print("Error generating order query")
+        return jsonify({"error":"Something went wrong. Please, Contact the admin"}), 503
+
+    try:
+       
+        # Obtendo valores de filtro
+        filter_string = filter_invoices(request.args)
+
+
+    except:
+        print("Error generating filter query")
+        return jsonify({"error":"Something went wrong. Please, Contact the admin"}), 400
+    try:
+
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+
+        psql_query_string = """
+            SELECT id, document, description, amount, referenceMonth, referenceYear, createdAt, isActive, deactiveAt
+            FROM invoices
+        """
+
+        psql_query_string += filter_string + order_string
+
+        cur.execute(psql_query_string)
+        rows = cur.fetchall()
+
+        print("The number of parts: ", cur.rowcount)
+        
+        list_invoices = []
+        for row in rows:
+            invoice = Invoice.generate_from_row(row)
+            list_invoices.append(invoice.__dict__)
+        
+        cur.close()
+        
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        return jsonify({"error":"Could not connect to Database"}), 503
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+    try:
+        # Tratando o valor das paginas
+        page = int(request.args.get('page')) if request.args.get('page') else 1
+        page = page if page > 1 else 1
+    
+        limit = 5 # Itens por pagina
+        
+        links_json = generate_links_json(page, limit, list_invoices)    
+
+
+        invoices = separate_result_per_page(list_invoices, limit, page)
+
+        result = create_list_result(links_json, limit, cur.rowcount, invoices)
+
+        return jsonify(result), 200
+    except:
+        print("Error while separeting itens per page")
+        return jsonify({"error":"Something went wrong. Please, Contact the admin"}), 400
+
+
+
+def order_invoices(order_query):
+    
+    order_string = "ORDER BY "
+
+    if (order_query):
+        if '-referenceMonth' in order_query:
+            order_string += "referenceMonth DESC,"
+        elif 'referenceMonth' in order_query:
+            order_string += "referenceMonth ASC,"
+
+        if '-referenceYear' in order_query:
+            order_string += "referenceYear DESC,"
+        if 'referenceYear' in order_query:
+            order_string += "referenceYear ASC,"
+            
+        if '-document' in order_query:
+            order_string += "document DESC,"
+        if 'document' in order_query:
+            order_string += "document ASC,"
+
+    order_string += "createdAt ASC"
+
+    return order_string
+
+
+def filter_invoices(query_args):
 
     # Obtendo valores de filtro
-    document_filter = request.args.get('document')
-    year_filter = request.args.get('year')
-    month_filter = request.args.get('month')
+    document_filter = query_args.get('document')
+    year_filter = query_args.get('year')
+    month_filter = query_args.get('month')
     
-    filtered_invoices = mock_invoices.copy()
+    filter_string = "WHERE "
+
+    # Filtro por documento
+    if document_filter:
+        filter_string += "LOWER(document) LIKE '%" + document_filter.lower() + "%' AND"
+
+    # # Filtro por Ano
+    if year_filter:
+        filter_string += "referenceyear = '" + year_filter + "' AND"
+
+    # # Filtro por Mes - "-09-" p.ex.
+    if month_filter:
+        filter_string += "referencemonth = '" + month_filter + "' AND"
+
+    if filter_string == "WHERE ":
+        filter_string = ""
+    else:
+        filter_string = filter_string[:-3]
     
-    if(document_filter or year_filter or month_filter):
-        i = 0
-        while i < len(filtered_invoices):
 
-            item_removed = False
-
-            # Filtro por documento
-            if document_filter and document_filter.lower() not in filtered_invoices[i]['document'].lower():
-                item_removed = True
-
-            # # Filtro por Ano
-            if year_filter and year_filter not in filtered_invoices[i]['referenceYear']:
-                item_removed = True
-
-            # # Filtro por Mes - "-09-" p.ex.
-            if month_filter and ("-"+month_filter.zfill(2)+"-") not in filtered_invoices[i]['referenceMonth']:
-                item_removed = True
-
-            if item_removed:
-                filtered_invoices.remove(filtered_invoices[i])                
-            else:
-                i += 1
-
-    ordered_invoices = order_invoices(filtered_invoices, order_query)
-
-    limit = 5 # Itens por pagina
-    count_invoices = len(filtered_invoices)
-
-    links_json = generate_links_json(page, limit, ordered_invoices)    
-
-    invoices = separate_result_per_page(ordered_invoices, limit, page)
-
-    result = create_list_result(links_json, limit, count_invoices, invoices)
-
-    return jsonify(result), 200
-
-def order_invoices(invoices_list, order_query):
-
-    invoices_list.sort(key = lambda x: x.get('createdAt'))
-
-    if (order_query):        
-        order_by_mouth = True if 'referenceMonth' in order_query else False
-        order_by_year = True if 'referenceYear' in order_query else False
-        order_by_document = True if 'document' in order_query else False    
-        
-        invoices_list.sort(key = lambda x: (x.get('referenceMonth') if order_by_mouth else '',
-            x.get('referenceYear') if order_by_year else '',
-            x.get('document') if order_by_document else ''))
+    return filter_string
 
 
-    return invoices_list
-
-
-def generate_links_json(page, limit, mock_invoices):
+def generate_links_json(page, limit, invoices):
     
-    count_invoices = len(mock_invoices)
+    count_invoices = len(invoices)
 
     previous_page = page - 1 if page > 1 else None 
     next_page = page + 1 if int(count_invoices/limit)+1 > page else None    
@@ -122,10 +193,10 @@ def generate_links_json(page, limit, mock_invoices):
 
     return links_json
 
-def separate_result_per_page(mock_invoices, limit, page):  
+def separate_result_per_page(list_invoices, limit, page):  
 
     invoices = []
-    count_invoices = len(mock_invoices)
+    count_invoices = len(list_invoices)
     
     # Lista de elementos na resposta
     first_element = (page-1) * limit
@@ -133,7 +204,7 @@ def separate_result_per_page(mock_invoices, limit, page):
     last_element = count_invoices if (last_element > count_invoices) else last_element
 
     for i in range(first_element, last_element):
-        invoices.append(mock_invoices[i])
+        invoices.append(list_invoices[i])
     
     return invoices
 
@@ -146,61 +217,152 @@ def create_list_result(links, limit, count_invoices, invoices):
     }
 
 @app.route('/invoices/<string:invoice_id>', methods=['GET'])
-@require_api_token
+# @require_api_token
 def get_invoices_by_id(invoice_id):
-    invoice = [inv for inv in mock_invoices if inv["id"] == invoice_id]
+    conn = None
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute("SELECT id, document, description, amount, referenceMonth, referenceYear, createdAt, isActive, deactiveAt "
+        + "FROM invoices WHERE id = " + invoice_id)
+        row = cur.fetchone()
+
+        while row is not None:
+            row = cur.fetchone()
+            invoice = Invoice.generate_from_row(row)
+            
+
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        return jsonify({"error":"Could not connect to Database"}), 503
+    finally:
+        if conn is not None:
+            conn.close()
+        
     return jsonify(invoice), 200
+    
 
 @app.route('/invoices', methods=['POST'])
-@require_api_token
+# @require_api_token
 def create_invoice():
 
     if request.get_json():
+        
+        conn = None
+        try:
             invoice = Invoice(request.get_json())
 
-            mock_invoices.append(invoice.__dict__)
+            insert_string = ("INSERT INTO invoices VALUES('" 
+                    + str(invoice.id) + "', '"
+                    + invoice.document + "', '"
+                    + invoice.description + "', "
+                    + str(invoice.amount) + ", '"
+                    + str(invoice.referenceMonth) + "', '"
+                    + str(invoice.referenceYear) + "', '"
+                    + str(invoice.createdAt) + "', "
+                    + str(invoice.isActive) + ");")
 
-            return jsonify(invoice.__dict__), 201
+            params = config()
+
+            conn = psycopg2.connect(**params)
+
+            cur = conn.cursor()
+            cur.execute(insert_string)
+
+            conn.commit()
+            cur.close()
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return jsonify({'error': 'Some error inserting data'}), 503
+        finally:
+            if conn is not None:
+                conn.close()
+
+        return jsonify(invoice.__dict__), 201
+
     else:
         return jsonify({'error': 'No requested body found'}), 400
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['PUT'])
-@require_api_token
+# @require_api_token
 def update_invoice(invoice_id):
-    for invoice in mock_invoices:
-        if invoice['id'] == invoice_id:
+    
+    if request.get_json():
 
-            for k in invoice.keys():
-                if k in request.get_json():
-                    invoice[k] = request.get_json()[k]
+        conn = None
+        updated_rows = 0
+        try:
+                
+            set_string = ""
+            for k in request.get_json().keys():
+                set_string += str(k) + " = '" + str(request.get_json()[k]) + "', "
 
-            new_invoice = Invoice(invoice,invoice_id)
+            set_string = set_string[:-2]
+            
+            
+            update_sql = ("UPDATE invoices " +
+                    " SET " + set_string +
+                    " WHERE id = '" + invoice_id + "';")
 
-            mock_invoices.remove(invoice)
-            mock_invoices.append(new_invoice.__dict__)
+            params = config()
+            conn = psycopg2.connect(**params)
+            cur = conn.cursor()
+            cur.execute(update_sql)
+            updated_rows = cur.rowcount
+            conn.commit()
+            cur.close()
 
-            return jsonify(new_invoice.__dict__), 200
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            return jsonify({'error': 'Invoice to update was not found'}), 503
 
-    return jsonify({'error': 'Invoice to update was not found'}), 404
+        finally:
+            if conn is not None:
+                conn.close()
+        
+        return jsonify({"message":"Updated Succesfull"}), 200
+    else:
+        return jsonify({'error': 'No requested body found'}), 400
+        
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['DELETE'])
-@require_api_token
+# @require_api_token
 def deactivate_invoice(invoice_id):
-    for invoice in mock_invoices:
-        if invoice['id'] == invoice_id and invoice['isActive']:
-            actual_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-            invoice["deactiveAt"] = actual_date
-            invoice["isActive"] = False
+    conn = None
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
 
-            return jsonify(invoice), 200
+        actual_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    return jsonify({'error': 'Invoice to remove was not found'}), 404
+        delete_sql = ("UPDATE invoices " +
+                " SET isactive = False, deactiveAt = '" + actual_date +
+                "' WHERE id = '" + invoice_id + "';")
 
-mock_invoices = ''
-with open('mock_data.json') as json_file:
-    mock_invoices = json.load(json_file)    
+        print(delete_sql)
+
+        cur.execute(delete_sql)
+
+        conn.commit()
+        # Close communication with the PostgreSQL database
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        return jsonify({'error': 'Invoice to remove was not found'}), 503
+    finally:
+        if conn is not None:
+            conn.close()
+    
+    return jsonify({"message":"Invoice Deactivated Succesfully"}), 200
+
 
 if __name__ == '__main__':
+
+    create_table()
     app.run(debug = True)

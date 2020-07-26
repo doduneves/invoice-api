@@ -1,7 +1,26 @@
 import uuid
 from datetime import datetime
+import decimal
 
 class Invoice:
+    # def __init__(self, row):
+
+    #     self.id = row[0]
+    #     self._document = row[1]
+    #     self.description = row[2]
+    #     self._amount = row[3]
+    #     self._referenceMonth = row[4]
+    #     self._referenceYear = row[5]
+    #     self.createdAt = row[6]
+    #     self.isActive = row[7]
+    #     self.deactiveAt = row[8]
+    #     self._links = {
+    #             "self": {
+    #                 "href": "http://localhost:5000/invoices/" + str(self.id)
+    #             }
+    #         }
+
+    
     def __init__(self, body_json, id_inv = None):
 
         self.id = id_inv if id_inv else uuid.uuid1()
@@ -18,6 +37,8 @@ class Invoice:
                     "href": "http://localhost:5000/invoices/" + str(self.id)
                 }
             }
+
+    
 
     # Validacoes
     @property
@@ -37,7 +58,7 @@ class Invoice:
     @_amount.setter
     def _amount(self, amount):
         if not amount: raise Exception("Amount cannot be null")
-        self.amount = amount
+        self.amount = str(decimal.Decimal(amount))
 
 
     @property
@@ -58,4 +79,19 @@ class Invoice:
     def _referenceYear(self, referenceYear):
         if not referenceYear: raise Exception("Reference Year cannot be null")
         self.referenceYear = referenceYear
+
+    @staticmethod
+    def generate_from_row(row):
+        body_json = {
+            "document": row[1],
+            "description": row[2],
+            "amount": row[3],
+            "referenceMonth": row[4],
+            "referenceYear": row[5],
+            "createdAt": row[6],
+            "isActive": row[7],
+            "deactiveAt": row[8],
+        }
+        return Invoice(body_json, row[0])
+        
         

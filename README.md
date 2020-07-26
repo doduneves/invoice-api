@@ -3,7 +3,7 @@
 Api Restful de gerenciamento de notas fiscais (invoices).
 
 ### Instalação
-É necessário ter o Python (v3) instalado em sua máquina para conseguir rodar o projeto.
+É necessário ter o Python (v3) e o PostgreSQL instalado em sua máquina para conseguir rodar o projeto.
 
 Baixe o projeto:
 
@@ -16,6 +16,8 @@ Execute-o em ambiente virtual
 E instale todas as dependências do projeto no ambiente:
 
 `$ pip install -r requirements.txt`
+
+Configure seus banco de dados de acordo com o arquivo *database.ini*. 
 
 E finalmente, para executá-lo (por padrão, roda na porta 5000 do localhost)
 
@@ -52,11 +54,11 @@ A listagem é exibida em páginas de 5 itens cada. Para selecionar o numero da p
 **Formato do body:**
 
 `{
-  "amount": [number],
-  "description": [string],
-  "document": [string],
-  "referenceMonth": [date],
-  "referenceYear": [number]
+  "amount": [number],\
+  "description": [string],\
+  "document": [string],\
+  "referenceMonth": [date],\
+  "referenceYear": [number]\
 }`
 
 **Atualiza um Invoice com o id declarado na querystring e os atributos a serem atualizados no body da requisição no mesmo formato do POST.**
@@ -89,4 +91,7 @@ No header da requisição: {"Auth-Key": "822e75ef88572e1278a74621385280ec"}
 - *20/jul - POST, PUT e DELETE*
 
 - *20/jul - Incluindo token estático para autorização de requisições à API*
+
+- *26/jul - Persistindo dados em banco PostgreSQL*
+
 
