@@ -26,7 +26,7 @@ def require_api_token(func):
     return check_token
 
 @app.route('/invoices/', methods=['GET'])
-# @require_api_token
+@require_api_token
 def list_invoices():
 
     conn = None
@@ -217,7 +217,7 @@ def create_list_result(links, limit, count_invoices, invoices):
     }
 
 @app.route('/invoices/<string:invoice_id>', methods=['GET'])
-# @require_api_token
+@require_api_token
 def get_invoices_by_id(invoice_id):
     conn = None
     try:
@@ -245,7 +245,7 @@ def get_invoices_by_id(invoice_id):
     
 
 @app.route('/invoices', methods=['POST'])
-# @require_api_token
+@require_api_token
 def create_invoice():
 
     if request.get_json():
@@ -288,7 +288,7 @@ def create_invoice():
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['PUT'])
-# @require_api_token
+@require_api_token
 def update_invoice(invoice_id):
     
     if request.get_json():
@@ -331,7 +331,7 @@ def update_invoice(invoice_id):
 
 
 @app.route('/invoices/<string:invoice_id>', methods=['DELETE'])
-# @require_api_token
+@require_api_token
 def deactivate_invoice(invoice_id):
     conn = None
     try:
