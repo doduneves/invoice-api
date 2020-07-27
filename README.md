@@ -80,6 +80,14 @@ No header da requisição: {"Auth-Key": "822e75ef88572e1278a74621385280ec"}
 `curl --location --request GET 'http://127.0.0.1:5000/invoices' \
 --header 'Auth-Key: 822e75ef88572e1278a74621385280ec' \`
 
+
+### Testes
+
+Os testes foram feitos com a biblioteca PyTest. Para rodá-los, utilize o comando na raiz do projeto:
+
+`$ pytest`
+
+
 ### Últimas Atualizações
 
 - *18/jul - Mockando dados e fazendo paginacao*
@@ -93,5 +101,7 @@ No header da requisição: {"Auth-Key": "822e75ef88572e1278a74621385280ec"}
 - *20/jul - Incluindo token estático para autorização de requisições à API*
 
 - *26/jul - Persistindo dados em banco PostgreSQL*
+
+- *27/jul - Cobertura com teste unitários*
 
 

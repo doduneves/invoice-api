@@ -2,25 +2,7 @@ import uuid
 from datetime import datetime
 import decimal
 
-class Invoice:
-    # def __init__(self, row):
-
-    #     self.id = row[0]
-    #     self._document = row[1]
-    #     self.description = row[2]
-    #     self._amount = row[3]
-    #     self._referenceMonth = row[4]
-    #     self._referenceYear = row[5]
-    #     self.createdAt = row[6]
-    #     self.isActive = row[7]
-    #     self.deactiveAt = row[8]
-    #     self._links = {
-    #             "self": {
-    #                 "href": "http://localhost:5000/invoices/" + str(self.id)
-    #             }
-    #         }
-
-    
+class Invoice:    
     def __init__(self, body_json, id_inv = None):
 
         self.id = id_inv if id_inv else uuid.uuid1()

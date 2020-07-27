@@ -225,13 +225,14 @@ def get_invoices_by_id(invoice_id):
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
         cur.execute("SELECT id, document, description, amount, referenceMonth, referenceYear, createdAt, isActive, deactiveAt "
-        + "FROM invoices WHERE id = " + invoice_id)
+        + "FROM invoices WHERE id = '" + invoice_id + "';")
         row = cur.fetchone()
 
-        while row is not None:
-            row = cur.fetchone()
-            invoice = Invoice.generate_from_row(row)
-            
+        if row:
+            invoice = Invoice.generate_from_row(row)  
+        else:
+            return jsonify({'error': 'Invoice not found'}), 503
+          
 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -241,7 +242,7 @@ def get_invoices_by_id(invoice_id):
         if conn is not None:
             conn.close()
         
-    return jsonify(invoice), 200
+    return jsonify(invoice.__dict__), 200
     
 
 @app.route('/invoices', methods=['POST'])
@@ -252,7 +253,11 @@ def create_invoice():
         
         conn = None
         try:
-            invoice = Invoice(request.get_json())
+            if 'id' in request.get_json():
+                invoice = Invoice(request.get_json(), request.get_json()['id'])
+            else:
+                invoice = Invoice(request.get_json())
+
 
             insert_string = ("INSERT INTO invoices VALUES('" 
                     + str(invoice.id) + "', '"
@@ -294,7 +299,6 @@ def update_invoice(invoice_id):
     if request.get_json():
 
         conn = None
-        updated_rows = 0
         try:
                 
             set_string = ""
@@ -312,7 +316,6 @@ def update_invoice(invoice_id):
             conn = psycopg2.connect(**params)
             cur = conn.cursor()
             cur.execute(update_sql)
-            updated_rows = cur.rowcount
             conn.commit()
             cur.close()
 
@@ -324,7 +327,7 @@ def update_invoice(invoice_id):
             if conn is not None:
                 conn.close()
         
-        return jsonify({"message":"Updated Succesfull"}), 200
+        return jsonify({"message":"Updated Succesfully"}), 200
     else:
         return jsonify({'error': 'No requested body found'}), 400
         
@@ -341,11 +344,20 @@ def deactivate_invoice(invoice_id):
 
         actual_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        delete_sql = ("UPDATE invoices " +
-                " SET isactive = False, deactiveAt = '" + actual_date +
-                "' WHERE id = '" + invoice_id + "';")
 
-        print(delete_sql)
+        if request.get_json() and 'force_delete' in request.get_json() and request.get_json()['force_delete']:
+            delete_sql = ("DELETE FROM invoices " +
+                "WHERE id = '" + invoice_id + "';")
+            
+            deleted_info = "Invoice Removed Succesfully"
+
+        
+        else:
+            delete_sql = ("UPDATE invoices " +
+                    " SET isactive = False, deactiveAt = '" + actual_date +
+                    "' WHERE id = '" + invoice_id + "';")
+        
+            deleted_info = "Invoice Deactivated Succesfully"
 
         cur.execute(delete_sql)
 
@@ -359,10 +371,9 @@ def deactivate_invoice(invoice_id):
         if conn is not None:
             conn.close()
     
-    return jsonify({"message":"Invoice Deactivated Succesfully"}), 200
+    return jsonify({"message": deleted_info}), 200
 
 
 if __name__ == '__main__':
-
     create_table()
     app.run(debug = True)

@@ -1,9 +1,9 @@
 
 import psycopg2
-import config
+from config import config
 
 
-def connect():
+def connect_db():
     conn = None
     try:
         params = config.config()
@@ -13,20 +13,14 @@ def connect():
 		
         cur = conn.cursor()
         
-        print('PostgreSQL database version:')
-        cur.execute('SELECT version()')
+        return (conn, cur)
 
-        db_version = cur.fetchone()
-        print(db_version)
-       
-        cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
 
 
-if __name__ == '__main__':
-    connect()
+def close_db():
+    db = g.pop('db', None)
+
+    if db is not None:
+        db.close()
