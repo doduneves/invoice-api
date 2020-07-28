@@ -1,10 +1,13 @@
+import sys
 import os
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
 import tempfile
 
 import pytest
 
-from app import app
-from config import db_connect
+from ..app import app
+from ..config import db_connect
 
 @pytest.fixture
 def client():

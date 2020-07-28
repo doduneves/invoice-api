@@ -1,3 +1,8 @@
+import sys
+import os
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
+
 from flask import Flask, jsonify, request
 from functools import wraps
 from datetime import datetime
@@ -5,6 +10,7 @@ from datetime import datetime
 import psycopg2
 
 from config.db_generate import create_table
+from config.db_connect import connect_db, close_db
 from config.config import config
 
 from model.invoice import Invoice
@@ -29,8 +35,6 @@ def require_api_token(func):
 @require_api_token
 def list_invoices():
 
-    conn = None
-
     try:
         
         # Obtendo o valor da query para ordenacao
@@ -53,10 +57,7 @@ def list_invoices():
         print("Error generating filter query")
         return jsonify({"error":"Something went wrong. Please, Contact the admin"}), 400
     try:
-
-        params = config()
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
+        (conn, cur) = connect_db()
 
         psql_query_string = """
             SELECT id, document, description, amount, referenceMonth, referenceYear, createdAt, isActive, deactiveAt
@@ -75,7 +76,6 @@ def list_invoices():
             invoice = Invoice.generate_from_row(row)
             list_invoices.append(invoice.__dict__)
         
-        cur.close()
         
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -83,8 +83,7 @@ def list_invoices():
         return jsonify({"error":"Could not connect to Database"}), 503
 
     finally:
-        if conn is not None:
-            conn.close()
+        close_db(conn, cur)
 
     try:
         # Tratando o valor das paginas
@@ -219,11 +218,9 @@ def create_list_result(links, limit, count_invoices, invoices):
 @app.route('/invoices/<string:invoice_id>', methods=['GET'])
 @require_api_token
 def get_invoices_by_id(invoice_id):
-    conn = None
     try:
-        params = config()
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
+        conn, cur = connect_db()
+
         cur.execute("SELECT id, document, description, amount, referenceMonth, referenceYear, createdAt, isActive, deactiveAt "
         + "FROM invoices WHERE id = '" + invoice_id + "';")
         row = cur.fetchone()
@@ -233,14 +230,12 @@ def get_invoices_by_id(invoice_id):
         else:
             return jsonify({'error': 'Invoice not found'}), 503
           
-
-        cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
         return jsonify({"error":"Could not connect to Database"}), 503
     finally:
-        if conn is not None:
-            conn.close()
+        close_db(conn, cur)
+
         
     return jsonify(invoice.__dict__), 200
     
@@ -251,8 +246,9 @@ def create_invoice():
 
     if request.get_json():
         
-        conn = None
         try:
+            conn, cur = connect_db()
+
             if 'id' in request.get_json():
                 invoice = Invoice(request.get_json(), request.get_json()['id'])
             else:
@@ -269,22 +265,16 @@ def create_invoice():
                     + str(invoice.createdAt) + "', "
                     + str(invoice.isActive) + ");")
 
-            params = config()
-
-            conn = psycopg2.connect(**params)
-
-            cur = conn.cursor()
             cur.execute(insert_string)
 
             conn.commit()
-            cur.close()
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return jsonify({'error': 'Some error inserting data'}), 503
         finally:
-            if conn is not None:
-                conn.close()
+            close_db(conn, cur)
+
 
         return jsonify(invoice.__dict__), 201
 
@@ -298,8 +288,8 @@ def update_invoice(invoice_id):
     
     if request.get_json():
 
-        conn = None
         try:
+            conn, cur = connect_db()
                 
             set_string = ""
             for k in request.get_json().keys():
@@ -312,20 +302,16 @@ def update_invoice(invoice_id):
                     " SET " + set_string +
                     " WHERE id = '" + invoice_id + "';")
 
-            params = config()
-            conn = psycopg2.connect(**params)
-            cur = conn.cursor()
             cur.execute(update_sql)
             conn.commit()
-            cur.close()
 
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             return jsonify({'error': 'Invoice to update was not found'}), 503
 
         finally:
-            if conn is not None:
-                conn.close()
+            close_db(conn, cur)
+
         
         return jsonify({"message":"Updated Succesfully"}), 200
     else:
@@ -336,11 +322,8 @@ def update_invoice(invoice_id):
 @app.route('/invoices/<string:invoice_id>', methods=['DELETE'])
 @require_api_token
 def deactivate_invoice(invoice_id):
-    conn = None
     try:
-        params = config()
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
+        conn, cur = connect_db()
 
         actual_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -359,17 +342,15 @@ def deactivate_invoice(invoice_id):
         
             deleted_info = "Invoice Deactivated Succesfully"
 
+        print(delete_sql)
         cur.execute(delete_sql)
-
         conn.commit()
-        # Close communication with the PostgreSQL database
-        cur.close()
+
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
         return jsonify({'error': 'Invoice to remove was not found'}), 503
     finally:
-        if conn is not None:
-            conn.close()
+        close_db(conn, cur)
     
     return jsonify({"message": deleted_info}), 200
 

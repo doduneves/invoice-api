@@ -1,12 +1,15 @@
+import sys
 import os
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
 import tempfile
 import json
 
 import pytest
 
-from config import db_connect
+from ..config import db_connect
 
-from test_basic import client
+from .test_basic import client
 
 data_json = dict(
     id = '94de4874-cf9b-11ea-87d0-0242ac130003',

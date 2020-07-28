@@ -1,13 +1,16 @@
+import sys
 import os
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
 import tempfile
 import json
 
 import pytest
 
-from config import db_connect
+from ..config import db_connect
 import dateutil.parser
 
-from test_basic import client
+from .test_basic import client
 
    
 data_json = dict(
@@ -69,7 +72,7 @@ def test_deactivate_inserted_invoice(client):
 def test_delete_inserted_invoice(client):
     
     res = client.delete('/invoices/'+ data_json['id'],
-        data = json.dumps({"force_delete": "true"}),
+        data = json.dumps({"force_delete": True}),
         headers = {'Auth-Key':'822e75ef88572e1278a74621385280ec'},
         content_type = 'application/json')
         

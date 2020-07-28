@@ -1,12 +1,12 @@
 
 import psycopg2
-from config import config
+from .config import config
 
 
 def connect_db():
     conn = None
     try:
-        params = config.config()
+        params = config()
 
         print('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
@@ -17,10 +17,13 @@ def connect_db():
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        return None, None
 
 
-def close_db():
-    db = g.pop('db', None)
 
-    if db is not None:
-        db.close()
+def close_db(conn, cur):
+    if cur is not None:
+        cur.close()
+    
+    if conn is not None:
+        conn.close()
